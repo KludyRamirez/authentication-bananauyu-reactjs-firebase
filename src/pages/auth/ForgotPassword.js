@@ -1,42 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { auth } from "../../firebase";
 import { toast } from "react-toastify";
-import { Button } from "antd";
-import { UserAddOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
+import { MailOutlined } from "@ant-design/icons";
+import { Button } from "antd";
 
-const Register = ({ history }) => {
+const Forgotpassword = ({ history }) => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState("");
+
   const { user } = useSelector((state) => ({ ...state }));
+
   useEffect(() => {
     if (user && user.token) {
       history.push("/");
     }
   }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("ENV --->", process.env.REACT_APP_REGISTER_REDIRECT_URL);
+    setLoading(true);
+
     const config = {
-      url: process.env.REACT_APP_REGISTER_REDIRECT_URL,
+      url: process.env.REACT_APP_FORGOT_PASSWORD_REDIRECT,
       handleCodeInApp: true,
     };
-    await auth.sendSignInLinkToEmail(email, config);
-    toast.success(
-      `Email is sent to ${email}. Click the link to complete registration.`
-    );
-    window.localStorage.setItem("emailForRegistration", email);
-    //
-    setEmail("");
+
+    await auth
+      .sendPasswordResetEmail(email, config)
+      .then(() => {
+        setEmail("");
+        setLoading(false);
+        toast.success("Check Your Email For Password Reset");
+      })
+      .catch((error) => {
+        setLoading(false);
+        toast.error(error.message);
+        console.log("ERROR MSG IN FORGOT PASSWORD", error);
+      });
   };
-  const registerForm = () => (
-    <div>
+
+  return (
+    <div className="container col-md-6 offset-md-3 p-5">
+      {loading ? (
+        <h4 className="text-danger">Loading...</h4>
+      ) : (
+        <h4>Forgot Password</h4>
+      )}
+
       <div>
         <input
           type="email"
           className="form-control"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email Address"
+          placeholder="Email"
           autoFocus
         />
       </div>
@@ -47,25 +65,13 @@ const Register = ({ history }) => {
         className="mb-3"
         block
         shape="round"
-        icon={<UserAddOutlined />}
+        icon={<MailOutlined />}
         size="large"
         disabled={!email}
       >
-        Register
+        Submit
       </Button>
     </div>
   );
-
-  return (
-    <div className="container p-5">
-      <div className="row">
-        <div className="col-md-6 offset-md-3">
-          <h4>Register</h4>
-          {registerForm()}
-        </div>
-      </div>
-    </div>
-  );
 };
-
-export default Register;
+export default Forgotpassword;
